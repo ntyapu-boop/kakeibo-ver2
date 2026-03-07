@@ -18,8 +18,9 @@
         .nav-item.active { color: var(--main); font-weight: bold; }
         .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
         .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; }
-        .day { background: white; min-height: 85px; padding: 6px; box-sizing: border-box; font-size: 10px; cursor: pointer; transition: 0.2s; }
-        .day-sum { display: block; text-align: center; margin-top: 5px; font-weight: bold; font-size: 11px; }
+        .day { background: white; min-height: 90px; padding: 4px; box-sizing: border-box; font-size: 10px; cursor: pointer; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+        .day-label { display: block; font-size: 8px; transform: scale(0.9); margin-left: -2px; line-height: 1.1; }
+        .day-sum { display: block; text-align: center; font-weight: bold; font-size: 11px; margin-bottom: 4px; }
         .summary-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
         .btn-main { width: 100%; padding: 15px; background: var(--main); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
@@ -44,10 +45,6 @@
     <div class="summary-box">
         <h3 id="report-month-title" style="margin-top:0;"></h3>
         <div id="report-summary"></div>
-        <div id="card-summary" style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;"></div>
-        <hr style="margin:15px 0; border:none; border-top:1px solid #eee;">
-        <h4>カテゴリ別支出</h4>
-        <div id="genre-chart"></div>
     </div>
 </div>
 
@@ -55,43 +52,33 @@
     <h2 id="input-title">収支登録</h2>
     <input type="hidden" id="edit-id">
     <label>日付</label><input type="date" id="f-date">
-    <label>タイトル</label><input type="text" id="f-title" placeholder="ガソリン、食費など">
+    <label>タイトル</label><input type="text" id="f-title" placeholder="ガソリンなど">
     <label>ジャンル</label>
     <select id="f-genre">
         <option>食費</option><option>外食</option><option>交通費</option><option>趣味</option>
-        <option>外出</option><option>車</option><option>服</option><option>貯金</option><option>固定費</option><option>その他</option>
+        <option>車</option><option>服</option><option>固定費</option><option>その他</option>
     </select>
     <label>金額</label><input type="text" id="f-amount">
     <label>支払い方法</label><select id="f-method"></select>
     <label>メモ</label><textarea id="f-memo" rows="2"></textarea>
     <button class="btn-main" onclick="saveEntry()">保存</button>
-    <button id="btn-cancel" onclick="cancelEdit()" style="display:none; margin-top:10px; background:#ccc; border:none; width:100%; padding:10px; border-radius:8px;">キャンセル</button>
 </div>
 
 <div id="page-settings" class="page">
     <h2>設定</h2>
     <div class="summary-box">
         <label>共通月間予算</label><input type="number" id="s-budget">
-        <label>カード (名前:締日:支払日, ...)</label>
-        <input type="text" id="s-cards" placeholder="リクルート:15:10, Olive:20:10">
-        <label>他決済方法 (カンマ区切り)</label>
+        <label>カード (名前:締日:支払日)</label>
+        <input type="text" id="s-cards" placeholder="リクルート:15:10">
+        <label>他決済方法</label>
         <input type="text" id="s-methods" placeholder="現金, PayPay">
-        <button class="btn-main" onclick="saveSettings()">設定を保存</button>
-    </div>
-    <h3>固定費マスタ</h3>
-    <div id="recurring-list"></div>
-    <div class="summary-box" style="background:#f0f0f0;">
-        <input type="text" id="r-title" placeholder="家賃など">
-        <input type="number" id="r-amount" placeholder="金額">
-        <input type="number" id="r-day" placeholder="日 (1-31)">
-        <select id="r-method" style="margin-bottom:10px;"></select>
-        <button onclick="addRecurring()" style="width:100%; padding:12px; background:var(--success); color:white; border:none; border-radius:8px;">固定費を追加</button>
+        <button class="btn-main" onclick="saveSettings()">保存</button>
     </div>
     <div class="summary-box">
-        <h3>バックアップ / 復元</h3>
-        <button onclick="exportData()" style="width:100%; padding:10px; background:var(--sub); color:white; border:none; border-radius:8px;">コードをコピー</button>
-        <textarea id="i-backup" placeholder="ここにコードを貼り付け" rows="2" style="margin-top:10px;"></textarea>
-        <button onclick="importData()" style="width:100%; padding:10px; background:var(--main); color:white; border:none; border-radius:8px;">復元を実行</button>
+        <h3>バックアップ</h3>
+        <button onclick="exportData()" style="width:100%; padding:10px; background:var(--sub); color:white; border:none; border-radius:8px;">コピー</button>
+        <textarea id="i-backup" placeholder="復元用コード" rows="2" style="margin-top:10px;"></textarea>
+        <button onclick="importData()" style="width:100%; padding:10px; background:var(--main); color:white; border:none; border-radius:8px;">復元</button>
     </div>
 </div>
 
@@ -104,15 +91,12 @@
 
 <script>
     let entries = JSON.parse(localStorage.getItem('kb_ult_v1_data')) || [];
-    let settings = JSON.parse(localStorage.getItem('kb_ult_v1_sets')) || { budget: 100000, cardData: [], otherMethods: ["現金", "PayPay"] };
-    let recurring = JSON.parse(localStorage.getItem('kb_ult_v1_recs')) || [];
+    let settings = JSON.parse(localStorage.getItem('kb_ult_v1_sets')) || { budget: 100000, cardData: [], otherMethods: ["現金"] };
     let currentViewDate = new Date();
-    let selectedDateStr = new Date().toISOString().split('T')[0];
 
     function saveLocal() {
         localStorage.setItem('kb_ult_v1_data', JSON.stringify(entries));
         localStorage.setItem('kb_ult_v1_sets', JSON.stringify(settings));
-        localStorage.setItem('kb_ult_v1_recs', JSON.stringify(recurring));
     }
 
     function showPage(pageId) {
@@ -122,91 +106,58 @@
         document.getElementById('nav-btn-' + pageId).classList.add('active');
         if(pageId === 'home') renderCalendar();
         if(pageId === 'report') renderReport();
-        if(pageId === 'settings') renderSettings();
     }
 
     function renderCalendar() {
-        checkAndApplyAutoItems();
         const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
         document.getElementById('month-title').textContent = `${y}年 ${m + 1}月`;
         const mStr = `${y}-${String(m + 1).padStart(2, '0')}`;
         
         const allMethods = [...settings.otherMethods, ...settings.cardData.map(c => c.name)];
-        const opts = allMethods.map(n => `<option>${n}</option>`).join('');
-        document.getElementById('f-method').innerHTML = opts;
-        document.getElementById('r-method').innerHTML = opts;
+        document.getElementById('f-method').innerHTML = allMethods.map(n => `<option>${n}</option>`).join('');
 
         const first = new Date(y, m, 1).getDay();
         const last = new Date(y, m + 1, 0).getDate();
         let html = '';
         for(let i=0; i<first; i++) html += '<div class="day" style="background:#f0f0f0"></div>';
+        
         for(let d=1; d<=last; d++) {
             const dStr = `${mStr}-${String(d).padStart(2,'0')}`;
             const dEntries = entries.filter(e => e.date === dStr);
-            // 支出のみで色判定（自動生成された引落明細は除外して判定）
             const dSpend = dEntries.filter(e => e.amount < 0 && !e.title.includes('[引落]')).reduce((s,e) => s + e.amount, 0);
             const dTotal = dEntries.reduce((s,e) => s + e.amount, 0);
             
+            // カードラベルの判定
+            let labels = "";
+            settings.cardData.forEach(card => {
+                if(card.closing === d) labels += `<span class="day-label" style="color:#d32f2f;">●[締] ${card.name}</span>`;
+                if(card.payment === d) labels += `<span class="day-label" style="color:var(--main);">●[落] ${card.name}</span>`;
+            });
+
             const bgColor = getAmtColor(dSpend);
             const textColor = Math.abs(dSpend) > 30000 ? '#fff' : '#333';
 
             html += `<div class="day" onclick="showDetails('${dStr}')" style="background:${bgColor}; color:${textColor}">
-                <span>${d}</span>
-                <span class="day-sum" style="color:${dTotal < 0 ? (Math.abs(dSpend) > 30000 ? '#fff' : '#d32f2f') : '#2e7d32'}">${dTotal !== 0 ? dTotal.toLocaleString() : ''}</span>
+                <div>
+                    <span style="font-weight:bold;">${d}</span>
+                    <div style="display:flex; flex-direction:column;">${labels}</div>
+                </div>
+                <span class="day-sum">${dTotal !== 0 ? dTotal.toLocaleString() : ''}</span>
             </div>`;
         }
         document.getElementById('calendar').innerHTML = html;
-        showDetails(selectedDateStr);
+        showDetails(new Date().toISOString().split('T')[0]);
     }
 
-    // ★ 少し濃いめのカラー調整
     function getAmtColor(s) {
         s = Math.abs(s);
         if (s === 0) return "#fff";
-        if (s <= 1000) return "#bbdefb";  // 青
-        if (s <= 3000) return "#c8e6c9";  // 緑
-        if (s <= 5000) return "#fff9c4";  // 黄
-        if (s <= 10000) return "#ffe0b2"; // オレンジ
-        if (s <= 30000) return "#ffcdd2"; // 赤
-        if (s <= 50000) return "#e1bee7"; // 紫
-        return "#bdbdbd";                // グレー（黒より見やすい）
-    }
-
-    // 固定費とカード引落の自動生成
-    function checkAndApplyAutoItems() {
-        const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
-        const mStr = `${y}-${String(m + 1).padStart(2, '0')}`;
-        
-        // 1. 固定費
-        recurring.forEach(r => {
-            const t = `[固定費] ${r.title}`;
-            if(!entries.some(e => e.date.startsWith(mStr) && e.title === t)) {
-                entries.push({ id: Date.now()+Math.random(), date: `${mStr}-${String(r.day).padStart(2,'0')}`, title: t, genre: "固定費", amount: r.amount, method: r.method, memo: "自動" });
-            }
-        });
-
-        // 2. カード引落（設定に基づき表示のみ）
-        settings.cardData.forEach(card => {
-            const t = `💳[引落] ${card.name}`;
-            const payDate = `${mStr}-${String(card.payment).padStart(2, '0')}`;
-            
-            // すでに今月の引落表示があればスキップ
-            if(entries.some(e => e.date === payDate && e.title === t)) return;
-
-            // 前月の締日までの合計を計算
-            const prevMonth = new Date(y, m, 0);
-            const start = new Date(y, m - 1, card.closing + 1);
-            const end = new Date(y, m, card.closing);
-            const total = entries.filter(e => {
-                const d = new Date(e.date);
-                return e.method === card.name && d >= start && d <= end && !e.title.includes('[引落]');
-            }).reduce((s, e) => s + e.amount, 0);
-
-            if(total !== 0) {
-                entries.push({ id: Date.now()+Math.random(), date: payDate, title: t, genre: "固定費", amount: total, method: "口座振替", memo: "自動計算" });
-            }
-        });
-        saveLocal();
+        if (s <= 1000) return "#bbdefb";
+        if (s <= 3000) return "#c8e6c9";
+        if (s <= 5000) return "#fff9c4";
+        if (s <= 10000) return "#ffe0b2";
+        if (s <= 30000) return "#ffcdd2";
+        return "#e1bee7";
     }
 
     function renderReport() {
@@ -214,15 +165,13 @@
         const mStr = `${y}-${String(m + 1).padStart(2, '0')}`;
         const mEntries = entries.filter(e => e.date.startsWith(mStr));
         const spend = Math.abs(mEntries.filter(e => e.amount < 0 && !e.title.includes('[引落]')).reduce((s,e) => s + e.amount, 0));
-        document.getElementById('report-month-title').textContent = `${y}年 ${m + 1}月`;
-        document.getElementById('report-summary').innerHTML = `予算: ${settings.budget.toLocaleString()}円 / 支出計: ${spend.toLocaleString()}円`;
+        document.getElementById('report-summary').innerHTML = `支出計: ${spend.toLocaleString()}円 / 予算: ${settings.budget.toLocaleString()}円`;
     }
 
     function renderSettings() {
         document.getElementById('s-budget').value = settings.budget;
         document.getElementById('s-cards').value = settings.cardData.map(c => `${c.name}:${c.closing}:${c.payment}`).join(', ');
         document.getElementById('s-methods').value = settings.otherMethods.join(', ');
-        document.getElementById('recurring-list').innerHTML = recurring.map(r => `<div class="detail-item">${r.title} (${r.amount}) <button class="btn-sm" style="background:var(--danger);color:white;" onclick="deleteRec(${r.id})">削除</button></div>`).join('');
     }
 
     function saveSettings() {
@@ -231,39 +180,25 @@
             const [n, c, p] = s.split(':').map(x => x.trim()); return { name: n, closing: parseInt(c), payment: parseInt(p) };
         });
         settings.otherMethods = document.getElementById('s-methods').value.split(',').map(s => s.trim());
-        saveLocal(); alert('保存しました。カレンダーを更新します。'); renderCalendar();
+        saveLocal(); renderCalendar(); alert('保存しました');
     }
-
-    function addRecurring() {
-        const t = document.getElementById('r-title').value;
-        const a = parseFloat(document.getElementById('r-amount').value);
-        if(!t || !a) return;
-        recurring.push({ id: Date.now(), title: t, amount: -Math.abs(a), day: parseInt(document.getElementById('r-day').value) || 1, method: document.getElementById('r-method').value });
-        saveLocal(); renderSettings();
-    }
-
-    function deleteRec(id) { recurring = recurring.filter(r => r.id !== id); saveLocal(); renderSettings(); }
 
     function showDetails(date) {
-        selectedDateStr = date;
         const list = entries.filter(e => e.date === date);
         document.getElementById('details-list').innerHTML = `<h4>${date}</h4>` + list.map(e => `<div class="detail-item">${e.title} : ${e.amount.toLocaleString()}円 <button class="btn-sm" style="background:var(--danger);color:white;" onclick="deleteEntry(${e.id})">削除</button></div>`).join('');
     }
 
     function saveEntry() {
-        const id = document.getElementById('edit-id').value;
         const val = document.getElementById('f-amount').value;
         let amt = parseFloat(val.replace('+', '')); if(!val.startsWith('+') && amt > 0) amt = -amt;
-        const entry = { id: id ? parseInt(id) : Date.now(), date: document.getElementById('f-date').value, title: document.getElementById('f-title').value || "無題", genre: document.getElementById('f-genre').value, amount: amt || 0, method: document.getElementById('f-method').value };
-        entries.push(entry);
+        entries.push({ id: Date.now(), date: document.getElementById('f-date').value, title: document.getElementById('f-title').value || "無題", genre: document.getElementById('f-genre').value, amount: amt || 0, method: document.getElementById('f-method').value });
         saveLocal(); showPage('home');
     }
 
     function deleteEntry(id) { entries = entries.filter(e => e.id !== id); saveLocal(); renderCalendar(); }
-    function cancelEdit() { document.getElementById('edit-id').value = ""; document.getElementById('btn-cancel').style.display = "none"; showPage('home'); }
     function changeMonth(d) { currentViewDate.setMonth(currentViewDate.getMonth() + d); renderCalendar(); }
-    function exportData() { navigator.clipboard.writeText(JSON.stringify({entries, settings, recurring})); alert('コピーしました'); }
-    function importData() { try { const p = JSON.parse(document.getElementById('i-backup').value); entries = p.entries; settings = p.settings; recurring = p.recurring; saveLocal(); location.reload(); } catch(e) { alert('形式ミス'); } }
+    function exportData() { navigator.clipboard.writeText(JSON.stringify(entries)); alert('コピーしました'); }
+    function importData() { try { entries = JSON.parse(document.getElementById('i-backup').value); saveLocal(); location.reload(); } catch(e) { alert('形式ミス'); } }
     
     document.getElementById('f-date').valueAsDate = new Date();
     renderCalendar();
