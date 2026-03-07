@@ -17,11 +17,11 @@
         .nav-item { flex: 1; text-align: center; padding-top: 15px; font-size: 10px; color: #888; }
         .nav-item.active { color: var(--main); font-weight: bold; }
         .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
-        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ccc; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; }
-        .day { background: white; min-height: 85px; padding: 4px; box-sizing: border-box; font-size: 10px; cursor: pointer; transition: 0.2s; }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #eee; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+        .day { background: white; min-height: 85px; padding: 6px; box-sizing: border-box; font-size: 10px; cursor: pointer; transition: background 0.3s; }
         .day-sum { display: block; text-align: center; margin-top: 5px; font-weight: bold; font-size: 11px; }
-        .summary-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
+        .summary-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
         .btn-main { width: 100%; padding: 15px; background: var(--main); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
         .detail-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
         .btn-sm { padding: 6px 10px; border-radius: 4px; border: none; font-size: 11px; font-weight: bold; }
@@ -30,13 +30,13 @@
 <body>
 
 <div id="page-home" class="page active">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <button onclick="changeMonth(-1)" style="padding:10px; border:none; background:none; font-size:20px;">◀</button>
-        <h2 id="month-title" style="margin:0;"></h2>
-        <button onclick="changeMonth(1)" style="padding:10px; border:none; background:none; font-size:20px;">▶</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding: 0 10px;">
+        <button onclick="changeMonth(-1)" style="padding:10px; border:none; background:none; font-size:20px; color:#666;">◀</button>
+        <h2 id="month-title" style="margin:0; font-size:1.2rem; letter-spacing:1px;"></h2>
+        <button onclick="changeMonth(1)" style="padding:10px; border:none; background:none; font-size:20px; color:#666;">▶</button>
     </div>
     <div class="calendar" id="calendar"></div>
-    <div id="day-details" style="margin-top:20px;"><div id="details-list"></div></div>
+    <div id="day-details" style="margin-top:20px; padding:0 5px;"><div id="details-list"></div></div>
 </div>
 
 <div id="page-report" class="page">
@@ -44,14 +44,14 @@
     <div class="summary-box">
         <h3 id="report-month-title" style="margin-top:0;"></h3>
         <div id="report-summary"></div>
-        <div id="card-summary" style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;"></div>
-        <hr style="margin:15px 0; border:none; border-top:1px solid #eee;">
+        <div id="card-summary" style="margin-top:10px; border-top:1px solid #f0f0f0; padding-top:10px;"></div>
+        <hr style="margin:15px 0; border:none; border-top:1px solid #f0f0f0;">
         <h4>カテゴリ別支出</h4>
         <div id="genre-chart"></div>
     </div>
     <div class="summary-box">
         <h4>明細検索</h4>
-        <input type="text" id="search-input" placeholder="検索..." oninput="renderSearch()">
+        <input type="text" id="search-input" placeholder="検索キーワード..." oninput="renderSearch()">
         <div id="search-results"></div>
     </div>
 </div>
@@ -60,7 +60,7 @@
     <h2 id="input-title">収支登録</h2>
     <input type="hidden" id="edit-id">
     <label>日付</label><input type="date" id="f-date">
-    <label>タイトル</label><input type="text" id="f-title" placeholder="ガソリンなど">
+    <label>タイトル</label><input type="text" id="f-title" placeholder="ガソリン、食費など">
     <label>ジャンル</label>
     <select id="f-genre">
         <option>食費</option><option>外食</option><option>交通費</option><option>趣味</option>
@@ -87,7 +87,7 @@
     <h3>固定費マスタ</h3>
     <div id="recurring-list" style="margin-bottom:10px;"></div>
     <div class="summary-box" style="background:#f0f0f0;">
-        <input type="text" id="r-title" placeholder="家賃など">
+        <input type="text" id="r-title" placeholder="項目名">
         <input type="number" id="r-amount" placeholder="金額">
         <input type="number" id="r-day" placeholder="日 (1-31)">
         <select id="r-method" style="margin-bottom:10px;"></select>
@@ -96,8 +96,8 @@
 
     <div class="summary-box">
         <h3>バックアップ / 復元</h3>
-        <button onclick="exportData()" style="width:100%; padding:10px; background:var(--sub); color:white; border:none; border-radius:8px;">バックアップ用コードをコピー</button>
-        <textarea id="i-backup" placeholder="復元する場合はここにコードを貼り付け" rows="2" style="margin-top:10px;"></textarea>
+        <button onclick="exportData()" style="width:100%; padding:10px; background:var(--sub); color:white; border:none; border-radius:8px;">コードをコピー</button>
+        <textarea id="i-backup" placeholder="復元用コードを貼り付け" rows="2" style="margin-top:10px;"></textarea>
         <button onclick="importData()" style="width:100%; padding:10px; background:var(--main); color:white; border:none; border-radius:8px;">復元を実行</button>
     </div>
 </div>
@@ -137,30 +137,25 @@
         const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
         document.getElementById('month-title').textContent = `${y}年 ${m + 1}月`;
         const mStr = `${y}-${String(m + 1).padStart(2, '0')}`;
-        
         const allMethods = [...settings.otherMethods, ...settings.cardData.map(c => c.name)];
-        const opts = allMethods.map(n => `<option>${n}</option>`).join('');
-        document.getElementById('f-method').innerHTML = opts;
-        document.getElementById('r-method').innerHTML = opts;
+        document.getElementById('f-method').innerHTML = allMethods.map(n => `<option>${n}</option>`).join('');
+        document.getElementById('r-method').innerHTML = allMethods.map(n => `<option>${n}</option>`).join('');
 
         const first = new Date(y, m, 1).getDay();
         const last = new Date(y, m + 1, 0).getDate();
         let html = '';
-        for(let i=0; i<first; i++) html += '<div class="day" style="background:#f0f0f0"></div>';
+        for(let i=0; i<first; i++) html += '<div class="day" style="background:#f9f9f9"></div>';
         for(let d=1; d<=last; d++) {
             const dStr = `${mStr}-${String(d).padStart(2,'0')}`;
             const dEntries = entries.filter(e => e.date === dStr);
             const dSpend = dEntries.filter(e => e.amount < 0).reduce((s,e) => s + e.amount, 0);
             const dTotal = dSpend + dEntries.filter(e => e.amount > 0).reduce((s,e) => s + e.amount, 0);
             
-            // 金額に応じた色の取得
             const bgColor = getAmtColor(dSpend);
-            // 背景が紫・黒の場合は文字を白くする
-            const textColor = Math.abs(dSpend) > 30000 ? 'white' : '#333';
-            const sumColor = dTotal < 0 ? (Math.abs(dSpend) > 30000 ? 'white' : '#d32f2f') : '#2e7d32';
+            const sumColor = dTotal < 0 ? '#d32f2f' : '#2e7d32';
 
-            html += `<div class="day" onclick="showDetails('${dStr}')" style="background:${bgColor}; color:${textColor}">
-                <span>${d}</span>
+            html += `<div class="day" onclick="showDetails('${dStr}')" style="background:${bgColor}">
+                <span style="font-weight:500;">${d}</span>
                 <span class="day-sum" style="color:${sumColor}">${dTotal !== 0 ? dTotal.toLocaleString() : ''}</span>
             </div>`;
         }
@@ -168,17 +163,16 @@
         showDetails(selectedDateStr);
     }
 
-    // ★ ご希望の色分けロジック
     function getAmtColor(s) {
         s = Math.abs(s);
-        if (s === 0) return "white";
-        if (s <= 1000) return "#007bff";  // 青
-        if (s <= 3000) return "#28a745";  // 緑
-        if (s <= 5000) return "#ffeb3b";  // 黄
-        if (s <= 10000) return "#ff9800"; // オレンジ
-        if (s <= 30000) return "#f44336"; // 赤
-        if (s <= 50000) return "#9c27b0"; // 紫
-        return "#212121";                // 黒
+        if (s === 0) return "#ffffff";
+        if (s <= 1000) return "#e3f2fd";  // 淡い青
+        if (s <= 3000) return "#e8f5e9";  // 淡い緑
+        if (s <= 5000) return "#fffde7";  // 淡い黄
+        if (s <= 10000) return "#fff3e0"; // 淡いオレンジ
+        if (s <= 30000) return "#ffebee"; // 淡い赤
+        if (s <= 50000) return "#f3e5f5"; // 淡い紫
+        return "#e0e0e0";                // 淡いグレー
     }
 
     function checkAndApplyRecurring() {
@@ -198,7 +192,7 @@
         const mEntries = entries.filter(e => e.date.startsWith(mStr));
         const spend = Math.abs(mEntries.filter(e => e.amount < 0).reduce((s,e) => s + e.amount, 0));
         document.getElementById('report-month-title').textContent = `${y}年 ${m + 1}月`;
-        document.getElementById('report-summary').innerHTML = `<div style="display:flex; justify-content:space-between;"><span>予算: ${settings.budget.toLocaleString()}円</span><span style="color:var(--danger)">支出: ${spend.toLocaleString()}円</span></div>`;
+        document.getElementById('report-summary').innerHTML = `<div style="display:flex; justify-content:space-between; font-size:1.1rem;"><span>予算: ${settings.budget.toLocaleString()}円</span><span style="color:var(--danger)">支出: ${spend.toLocaleString()}円</span></div>`;
         
         let cardHtml = "";
         settings.cardData.forEach(card => {
@@ -211,7 +205,7 @@
         
         const genres = {};
         mEntries.filter(e => e.amount < 0).forEach(e => genres[e.genre] = (genres[e.genre] || 0) + Math.abs(e.amount));
-        document.getElementById('genre-chart').innerHTML = Object.entries(genres).map(([n, v]) => `<div style="margin-bottom:5px;">${n}: ${v.toLocaleString()}円</div>`).join('') || "データなし";
+        document.getElementById('genre-chart').innerHTML = Object.entries(genres).sort((a,b)=>b[1]-a[1]).map(([n, v]) => `<div style="margin-bottom:8px; display:flex; justify-content:space-between;"><span>${n}</span><span>${v.toLocaleString()}円</span></div>`).join('') || "データなし";
     }
 
     function renderSearch() {
@@ -251,11 +245,11 @@
     function showDetails(date) {
         selectedDateStr = date;
         const list = entries.filter(e => e.date === date);
-        document.getElementById('details-list').innerHTML = `<h4 style="margin-bottom:10px;">${date}の明細</h4>` + (list.map(e => `
+        document.getElementById('details-list').innerHTML = `<h4 style="margin: 0 0 10px 0;">${date} の明細</h4>` + (list.map(e => `
             <div class="detail-item">
-                <div style="flex:1;"><strong>${e.title}</strong><br><small>${e.amount.toLocaleString()}円 / ${e.method}</small></div>
+                <div style="flex:1;"><strong>${e.title}</strong><br><small style="color:#888;">${e.amount.toLocaleString()}円 / ${e.method}</small></div>
                 <button class="btn-sm" style="background:var(--danger); color:white" onclick="deleteEntry(${e.id})">削除</button>
-            </div>`).join('') || '<p style="color:#999;">明細なし</p>');
+            </div>`).join('') || '<p style="color:#aaa;">明細なし</p>');
     }
 
     function saveEntry() {
@@ -274,13 +268,13 @@
     
     function exportData() { 
         const data = JSON.stringify({entries, settings, recurring});
-        navigator.clipboard.writeText(data).then(() => alert('バックアップコードをコピーしました')); 
+        navigator.clipboard.writeText(data).then(() => alert('コピー完了')); 
     }
     
     function importData() { 
         try { 
             const p = JSON.parse(document.getElementById('i-backup').value); 
-            if(confirm('データを復元しますか？')) {
+            if(confirm('既存のデータが上書きされます。よろしいですか？')) {
                 entries = p.entries || []; settings = p.settings || settings; recurring = p.recurring || [];
                 saveLocal(); location.reload(); 
             }
