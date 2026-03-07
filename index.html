@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>家計簿 Pro+ Universal</title>
+    <title>家計簿 Pro+ Master Edition</title>
     <style>
         :root { --main: #007bff; --bg: #f8f9fa; --danger: #dc3545; --success: #28a745; --sub: #6c757d; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: #333; -webkit-tap-highlight-color: transparent; }
@@ -15,22 +15,21 @@
         .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
         .header-summary { background: #333; color: white; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ddd; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; }
-        .day { background: white; min-height: 85px; padding: 4px; box-sizing: border-box; font-size: 10px; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
-        .day-label { display: block; font-size: 8px; transform: scale(0.8); transform-origin: left top; white-space: nowrap; font-weight: bold; margin-bottom: 1px; }
+        .day { background: white; min-height: 85px; padding: 4px; box-sizing: border-box; font-size: 10px; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; }
+        .day-label { display: block; font-size: 8px; transform: scale(0.8); transform-origin: left top; white-space: nowrap; font-weight: bold; }
         .day-sum { display: block; text-align: center; font-weight: bold; font-size: 10px; }
         .box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
         .math-row { font-family: monospace; font-size: 1.1rem; margin: 10px 0; background: #eee; padding: 10px; border-radius: 6px; text-align: center; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; margin-bottom: 10px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; margin-bottom: 8px; }
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
         .btn-main { background: var(--main); color: white; }
-        .detail-item { background: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #eee; display: flex; flex-direction: column; }
-        .btn-row { display: flex; gap: 10px; margin-top: 8px; }
-        .btn-sm { flex: 1; padding: 6px; border-radius: 4px; border: none; font-size: 12px; color: white; cursor: pointer; text-align: center; }
+        .btn-sm { padding: 6px 10px; border-radius: 4px; border: none; font-size: 12px; color: white; cursor: pointer; }
         .toggle-btn { display: flex; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; overflow: hidden; }
-        .toggle-opt { flex: 1; padding: 10px; text-align: center; background: #eee; cursor: pointer; font-weight: bold; }
+        .toggle-opt { flex: 1; padding: 10px; text-align: center; background: #eee; cursor: pointer; }
         .toggle-opt.selected { background: var(--main); color: white; }
         .toggle-opt.income.selected { background: var(--success); }
         .hidden { display: none; }
+        .list-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -38,7 +37,7 @@
 <div id="top-bar" style="padding: 10px 15px 0 15px;">
     <div class="header-summary">
         <span id="header-month">----年--月</span>
-        <span>合計支出: <b id="header-total">0</b> 円</span>
+        <span>今月の支出計: <b id="header-total">0</b> 円</span>
     </div>
 </div>
 
@@ -56,18 +55,19 @@
     <div class="box">
         <h4>収支計算</h4>
         <div class="math-row" id="math-display">0 - (0 + 0) = 0</div>
+        <p style="font-size:11px; text-align:center; color:#666;">予算 - (固定費 + 変動費) = 残金</p>
+    </div>
+    <div class="box">
+        <h4>支払い方法別 (支出)</h4>
+        <div id="method-summary"></div>
     </div>
     <div class="box">
         <h4>検索</h4>
-        <input type="text" id="search-input" placeholder="タイトルやメモで検索..." oninput="runSearch()">
+        <input type="text" id="search-input" placeholder="キーワード検索..." oninput="runSearch()">
         <div id="search-results" style="max-height:150px; overflow-y:auto; font-size:12px;"></div>
     </div>
     <div class="box">
-        <h4>直近3件</h4>
-        <div id="recent-3"></div>
-    </div>
-    <div class="box">
-        <h4>ジャンル別</h4>
+        <h4>ジャンル別支出</h4>
         <div id="genre-top3"></div>
         <div id="genre-more" class="hidden"></div>
         <button id="btn-toggle-genre" onclick="toggleGenre()" style="width:100%; background:none; border:none; color:var(--main); padding:10px;">▼ もっと見る</button>
@@ -96,20 +96,32 @@
     <div class="box">
         <label>今月の予算</label>
         <input type="number" id="s-budget">
-        <button class="btn-sm" style="background:var(--main); width:100%; padding:10px;" onclick="saveBudget()">予算保存</button>
+        <button class="btn-sm" style="background:var(--main); width:100%;" onclick="saveBudget()">予算を保存</button>
     </div>
     <div class="box">
-        <h4>マスター設定 (カンマ区切り)</h4>
+        <h4>固定費のひな形設定</h4>
+        <div id="rec-list"></div>
+        <hr>
+        <div style="background:#f9f9f9; padding:10px; border-radius:8px;">
+            <input type="text" id="r-title" placeholder="項目名 (例:家賃)">
+            <input type="number" id="r-amount" placeholder="金額">
+            <input type="number" id="r-day" placeholder="日 (1-31)">
+            <select id="r-method"></select>
+            <button class="btn-sm" style="background:var(--success); width:100%;" onclick="addRecurring()">ひな形を追加</button>
+        </div>
+    </div>
+    <div class="box">
+        <h4>マスターカスタマイズ</h4>
         <label>クレカ (名称:締:払)</label><input type="text" id="s-cards" placeholder="リクルート:15:10">
-        <label>支払い方法</label><input type="text" id="s-methods">
-        <label>ジャンル</label><input type="text" id="s-genres">
-        <button class="btn btn-main" onclick="saveCustoms()" style="margin-top:10px;">設定更新</button>
+        <label>支払い方法 (カンマ区切り)</label><input type="text" id="s-methods">
+        <label>ジャンル (カンマ区切り)</label><input type="text" id="s-genres">
+        <button class="btn btn-main" onclick="saveCustoms()">設定を更新</button>
     </div>
     <div class="box">
-        <h4>バックアップ</h4>
-        <button onclick="exportData()" class="btn" style="background:var(--sub); color:white; margin-bottom:10px;">コードをコピー</button>
-        <textarea id="i-backup" placeholder="コードを貼って復元" rows="2"></textarea>
-        <button onclick="importData()" class="btn-sm" style="background:var(--danger); width:100%; padding:10px;">データを復元</button>
+        <h4>データバックアップ</h4>
+        <button onclick="exportData()" class="btn" style="background:var(--sub); color:white; margin-bottom:10px;">全データをコピー</button>
+        <textarea id="i-backup" placeholder="復元コードをここに貼り付け" rows="2"></textarea>
+        <button onclick="importData()" class="btn-sm" style="background:var(--danger); width:100%;">データを復元</button>
     </div>
 </div>
 
@@ -121,17 +133,18 @@
 </div>
 
 <script>
-    let entries = JSON.parse(localStorage.getItem('kb_v4_data')) || [];
-    let settings = JSON.parse(localStorage.getItem('kb_v4_sets')) || {
+    let entries = JSON.parse(localStorage.getItem('kb_final_data')) || [];
+    let settings = JSON.parse(localStorage.getItem('kb_final_sets')) || {
         budgets: {}, cards: [], methods: ["現金", "リクルート", "Olive", "PayPay"],
-        genres: ["食費", "外食", "趣味", "旅行・観光", "交通費", "固定費", "その他"]
+        genres: ["食費", "外食", "趣味", "旅行・観光", "交通費", "車", "固定費", "その他"],
+        recurring: [] 
     };
     let currentViewDate = new Date();
     let currentType = 'out';
 
     function saveLocal() {
-        localStorage.setItem('kb_v4_data', JSON.stringify(entries));
-        localStorage.setItem('kb_v4_sets', JSON.stringify(settings));
+        localStorage.setItem('kb_final_data', JSON.stringify(entries));
+        localStorage.setItem('kb_final_sets', JSON.stringify(settings));
     }
 
     function showPage(p) {
@@ -153,17 +166,37 @@
 
     function getDayColor(sum) {
         const s = Math.abs(sum);
-        if (sum > 0) return "#e8f5e9"; // 収入がある日は薄緑
+        if (sum > 0) return "#e8f5e9"; 
         if (s === 0) return "#fff";
-        if (s < 1000) return "#f1f8e9"; // 緑
-        if (s < 5000) return "#e3f2fd"; // 青
-        if (s < 10000) return "#fff9c4"; // 黄
-        if (s < 20000) return "#ffe0b2"; // オレンジ
-        if (s < 50000) return "#ffcdd2"; // 赤
-        return "#f3e5f5"; // 紫
+        if (s < 1000) return "#f1f8e9"; // 1-999 緑
+        if (s < 5000) return "#e3f2fd"; // 1000-4999 青
+        if (s < 10000) return "#fff9c4"; // 5000-9999 黄
+        if (s < 20000) return "#ffe0b2"; // 10000-19999 オレンジ
+        if (s < 50000) return "#ffcdd2"; // 20000-49999 赤
+        return "#f3e5f5"; // 50000- 紫
+    }
+
+    function checkRecurring() {
+        const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
+        const mStr = `${y}-${String(m + 1).padStart(2, '0')}`;
+        let updated = false;
+        settings.recurring.forEach(r => {
+            const autoTitle = `[固定費] ${r.title}`;
+            if(!entries.some(e => e.date.startsWith(mStr) && e.title === autoTitle)) {
+                entries.push({
+                    id: Date.now() + Math.random(),
+                    date: `${mStr}-${String(r.day).padStart(2,'0')}`,
+                    title: autoTitle, genre: "固定費", method: r.method,
+                    amount: -Math.abs(r.amount), memo: "自動生成"
+                });
+                updated = true;
+            }
+        });
+        if(updated) saveLocal();
     }
 
     function renderCalendar() {
+        checkRecurring();
         const y = currentViewDate.getFullYear(), m = currentViewDate.getMonth();
         const mStr = `${y}-${String(m + 1).padStart(2, '0')}`;
         document.getElementById('header-month').textContent = `${y}年 ${m + 1}月`;
@@ -193,13 +226,12 @@
         const list = entries.filter(e => e.date === date);
         let html = `<h4>${date} の内訳</h4>`;
         html += list.map(e => `
-            <div class="detail-item">
-                <b>${e.title}</b>
-                <small>${e.genre} / ${e.method}</small>
-                <div style="font-weight:bold; color:${e.amount>0?'green':''};">${e.amount.toLocaleString()}円</div>
-                <div class="btn-row">
-                    <button class="btn-sm" style="background:orange;" onclick="startEdit(${e.id})">編集</button>
-                    <button class="btn-sm" style="background:red;" onclick="deleteEntry(${e.id})">削除</button>
+            <div class="box" style="margin-bottom:8px; padding:10px;">
+                <b>${e.title}</b> <small>(${e.genre})</small>
+                <div style="font-weight:bold; color:${e.amount>0?'green':''};">${e.amount.toLocaleString()}円 / ${e.method}</div>
+                <div style="display:flex; gap:10px; margin-top:5px;">
+                    <button class="btn-sm" style="background:orange; flex:1;" onclick="startEdit(${e.id})">編集</button>
+                    <button class="btn-sm" style="background:red; flex:1;" onclick="deleteEntry(${e.id})">削除</button>
                 </div>
             </div>`).join('') || "<p>データなし</p>";
         document.getElementById('details-list').innerHTML = html;
@@ -221,7 +253,7 @@
         const id = document.getElementById('f-id').value;
         const amtVal = Math.abs(parseInt(document.getElementById('f-amount').value) || 0);
         const entry = {
-            id: id ? parseInt(id) : Date.now(),
+            id: id ? parseFloat(id) : Date.now(),
             date: document.getElementById('f-date').value,
             title: document.getElementById('f-title').value || "無題",
             genre: document.getElementById('f-genre').value,
@@ -229,15 +261,13 @@
             amount: currentType === 'out' ? -amtVal : amtVal,
             memo: document.getElementById('f-memo').value
         };
-        if(id) entries = entries.map(e => e.id === entry.id ? entry : e);
+        if(id) entries = entries.map(e => e.id == id ? entry : e);
         else entries.push(entry);
-        saveLocal();
-        cancelEdit();
-        showPage('home');
+        saveLocal(); cancelEdit(); showPage('home');
     }
 
     function startEdit(id) {
-        const e = entries.find(x => x.id === id);
+        const e = entries.find(x => x.id == id);
         if(!e) return;
         showPage('input');
         document.getElementById('f-id').value = e.id;
@@ -248,7 +278,7 @@
         document.getElementById('f-amount').value = Math.abs(e.amount);
         document.getElementById('f-memo').value = e.memo;
         setType(e.amount >= 0 ? 'in' : 'out');
-        document.getElementById('input-title-text').textContent = "データを編集";
+        document.getElementById('input-title-text').textContent = "明細を編集";
         document.getElementById('btn-cancel-edit').style.display = "block";
     }
 
@@ -260,23 +290,29 @@
     }
 
     function deleteEntry(id) {
-        if(confirm("削除しますか？")) { entries = entries.filter(e => e.id !== id); saveLocal(); renderCalendar(); document.getElementById('details-list').innerHTML = ""; }
+        if(confirm("削除しますか？")) { entries = entries.filter(e => e.id != id); saveLocal(); renderCalendar(); document.getElementById('details-list').innerHTML = ""; }
     }
 
     function renderReport() {
         const mStr = `${currentViewDate.getFullYear()}-${String(currentViewDate.getMonth() + 1).padStart(2, '0')}`;
         const mEntries = entries.filter(e => e.date.startsWith(mStr));
         const budget = settings.budgets[mStr] || 0;
-        const fix = Math.abs(mEntries.filter(e => e.genre === "固定費" && e.amount < 0).reduce((s, e) => s + e.amount, 0));
-        const vari = Math.abs(mEntries.filter(e => e.genre !== "固定費" && e.amount < 0).reduce((s, e) => s + e.amount, 0));
+        const fix = Math.abs(mEntries.filter(e => (e.genre === "固定費" || e.title.includes("[固定費]")) && e.amount < 0).reduce((s, e) => s + e.amount, 0));
+        const vari = Math.abs(mEntries.filter(e => !(e.genre === "固定費" || e.title.includes("[固定費]")) && e.amount < 0).reduce((s, e) => s + e.amount, 0));
         const remain = budget - (fix + vari);
         document.getElementById('math-display').innerHTML = `${budget.toLocaleString()} - (${fix.toLocaleString()} + ${vari.toLocaleString()}) = <b style="color:${remain < 0 ? 'red' : 'green'}">${remain.toLocaleString()}</b>`;
         
-        const genres = {};
-        mEntries.filter(e => e.amount < 0).forEach(e => { genres[e.genre] = (genres[e.genre] || 0) + Math.abs(e.amount); });
-        const sorted = Object.entries(genres).sort((a,b) => b[1] - a[1]);
-        document.getElementById('genre-top3').innerHTML = sorted.slice(0, 3).map(([n, v]) => `<div style="display:flex;justify-content:space-between;padding:5px 0;"><span>${n}</span><b>${v.toLocaleString()}円</b></div>`).join('');
-        document.getElementById('genre-more').innerHTML = sorted.slice(3).map(([n, v]) => `<div style="display:flex;justify-content:space-between;padding:5px 0;"><span>${n}</span><b>${v.toLocaleString()}円</b></div>`).join('');
+        // 支払い方法別
+        const methodsMap = {};
+        mEntries.filter(e => e.amount < 0).forEach(e => { methodsMap[e.method] = (methodsMap[e.method] || 0) + Math.abs(e.amount); });
+        document.getElementById('method-summary').innerHTML = Object.entries(methodsMap).map(([n, v]) => `<div class="list-row"><span>${n}</span><b>${v.toLocaleString()}円</b></div>`).join('') || "記録なし";
+
+        // ジャンル別
+        const genresMap = {};
+        mEntries.filter(e => e.amount < 0).forEach(e => { genresMap[e.genre] = (genresMap[e.genre] || 0) + Math.abs(e.amount); });
+        const sorted = Object.entries(genresMap).sort((a,b) => b[1] - a[1]);
+        document.getElementById('genre-top3').innerHTML = sorted.slice(0, 3).map(([n, v]) => `<div class="list-row"><span>${n}</span><b>${v.toLocaleString()}円</b></div>`).join('');
+        document.getElementById('genre-more').innerHTML = sorted.slice(3).map(([n, v]) => `<div class="list-row"><span>${n}</span><b>${v.toLocaleString()}円</b></div>`).join('');
     }
 
     function toggleGenre() {
@@ -297,25 +333,30 @@
         document.getElementById('s-cards').value = settings.cards.map(c => `${c.name}:${c.close}:${c.pay}`).join(', ');
         document.getElementById('s-methods').value = settings.methods.join(', ');
         document.getElementById('s-genres').value = settings.genres.join(', ');
+        document.getElementById('r-method').innerHTML = settings.methods.map(m => `<option>${m}</option>`).join('');
+        document.getElementById('rec-list').innerHTML = settings.recurring.map((r, i) => `
+            <div class="list-row"><span>${r.day}日: ${r.title} (${r.amount.toLocaleString()}円)</span><button class="btn-sm" style="background:red;" onclick="removeRecurring(${i})">削除</button></div>`).join('') || "未設定";
     }
 
-    function saveBudget() {
-        const mStr = `${currentViewDate.getFullYear()}-${String(currentViewDate.getMonth() + 1).padStart(2, '0')}`;
-        settings.budgets[mStr] = parseInt(document.getElementById('s-budget').value) || 0;
-        saveLocal(); alert("予算保存");
+    function addRecurring() {
+        const t = document.getElementById('r-title').value, a = parseInt(document.getElementById('r-amount').value), d = parseInt(document.getElementById('r-day').value), m = document.getElementById('r-method').value;
+        if(!t || !a || !d) return;
+        settings.recurring.push({ title: t, amount: a, day: d, method: m });
+        saveLocal(); renderSettings();
+        document.getElementById('r-title').value = ""; document.getElementById('r-amount').value = ""; document.getElementById('r-day').value = "";
     }
-
+    function removeRecurring(i) { if(confirm("ひな形を削除しますか？")) { settings.recurring.splice(i, 1); saveLocal(); renderSettings(); } }
+    function saveBudget() { const mStr = `${currentViewDate.getFullYear()}-${String(currentViewDate.getMonth() + 1).padStart(2, '0')}`; settings.budgets[mStr] = parseInt(document.getElementById('s-budget').value) || 0; saveLocal(); alert("予算保存"); }
     function saveCustoms() {
         settings.methods = document.getElementById('s-methods').value.split(',').map(s => s.trim());
         settings.genres = document.getElementById('s-genres').value.split(',').map(s => s.trim());
         settings.cards = document.getElementById('s-cards').value.split(',').filter(s => s.includes(':')).map(s => {
             const [n, c, p] = s.split(':').map(x => x.trim()); return { name: n, close: parseInt(c), pay: parseInt(p) };
         });
-        saveLocal(); alert("マスター保存");
+        saveLocal(); alert("設定更新");
     }
-
     function changeMonth(d) { currentViewDate.setMonth(currentViewDate.getMonth() + d); renderCalendar(); }
-    function exportData() { navigator.clipboard.writeText(JSON.stringify({entries, settings})); alert("コピーしました"); }
+    function exportData() { navigator.clipboard.writeText(JSON.stringify({entries, settings})); alert("コピー完了"); }
     function importData() { try { const d = JSON.parse(document.getElementById('i-backup').value); entries = d.entries; settings = d.settings; saveLocal(); location.reload(); } catch(e) { alert("失敗"); } }
     
     renderCalendar();
