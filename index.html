@@ -165,6 +165,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg,#f4f4f0);color:va
 .set-acts{display:flex;gap:5px;flex-shrink:0;}
 .btn-add-set{width:100%;background:var(--surface2,#f8f8f5);border:1.5px dashed var(--border2,#ccccc4);color:var(--text2,#52524a);border-radius:var(--rsm,8px);padding:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:5px;}
 .bkup-row{display:flex;gap:8px;flex-wrap:wrap;}
+.archive-toggle{display:flex;justify-content:space-between;align-items:center;padding:9px 2px;margin-top:12px;font-size:11px;font-weight:700;color:var(--text3,#96968a);letter-spacing:.5px;cursor:pointer;border-top:1px solid var(--border,#e0e0d6);}
+.backup-warn{background:#fff8e8;border:1px solid #f5a623;color:#c07800;border-radius:var(--rsm,8px);padding:9px 11px;font-size:11px;margin-bottom:10px;line-height:1.5;}
 .btn-bkup{flex:1;background:var(--surface2,#f8f8f5);border:1px solid var(--border2,#ccccc4);color:var(--text2,#52524a);border-radius:var(--rsm,8px);padding:9px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;min-width:80px;}
 .btn-bkup.legacy{background:#fff8e8;border-color:#f5a623;color:#c07800;}
 input[type=file]{display:none;}
@@ -234,7 +236,7 @@ input[type=file]{display:none;}
       <button class="btn-add-set" onclick="openSplitModal()" style="margin-bottom:14px">🧾 レシートを分割して入力</button>
       <div class="fgrp"><label class="flbl">種別</label><div class="type-tog"><button class="type-btn ae" id="it-e" onclick="setIT('expense')">支出</button><button class="type-btn" id="it-i" onclick="setIT('income')">収入</button></div></div>
       <div class="fgrp"><label class="flbl">日付</label><input type="date" class="fctl" id="it-date"></div>
-      <div class="fgrp"><label class="flbl">タイトル</label><input type="text" class="fctl" id="it-title" placeholder="例：スーパー"></div>
+      <div class="fgrp"><label class="flbl">タイトル</label><div class="tag-input-wrap"><input type="text" class="fctl" id="it-title" placeholder="例：スーパー" autocomplete="off"><div class="tag-sug" id="it-title-sug"></div></div></div>
       <div class="fgrp"><label class="flbl">ジャンル</label><select class="fctl" id="it-cat"></select></div>
       <div class="fgrp"><label class="flbl">支払い方法</label><select class="fctl" id="it-pm"></select></div>
       <div class="fgrp"><label class="flbl">金額</label><input type="text" class="fctl" id="it-amt" placeholder="0" inputmode="numeric"></div>
@@ -274,6 +276,7 @@ input[type=file]{display:none;}
       <div class="set-sec"><div class="set-sec-ttl">テンプレート</div><div id="tmpl-list"></div><button class="btn-add-set" onclick="openTmplModal()">＋ テンプレートを追加</button></div>
       <div class="set-sec">
         <div class="set-sec-ttl">バックアップ</div>
+        <div id="backup-status"></div>
         <div class="bkup-row">
           <button class="btn-bkup" onclick="exportBkup()">📤 エクスポート</button>
           <button class="btn-bkup" onclick="document.getElementById('imp-file').click()">📥 インポート</button>
@@ -311,7 +314,7 @@ input[type=file]{display:none;}
     <div class="modal-hdr"><div class="modal-ttl" id="mtx-ttl">取引を追加</div><div class="modal-x" onclick="closeModal('modal-tx')">✕</div></div>
     <div class="fgrp"><label class="flbl">種別</label><div class="type-tog"><button class="type-btn ae" id="mt-e" onclick="setMT('expense')">支出</button><button class="type-btn" id="mt-i" onclick="setMT('income')">収入</button></div></div>
     <div class="fgrp"><label class="flbl">日付</label><input type="date" class="fctl" id="mt-date"></div>
-    <div class="fgrp"><label class="flbl">タイトル</label><input type="text" class="fctl" id="mt-title" placeholder="例：スーパー"></div>
+    <div class="fgrp"><label class="flbl">タイトル</label><div class="tag-input-wrap"><input type="text" class="fctl" id="mt-title" placeholder="例：スーパー" autocomplete="off"><div class="tag-sug" id="mt-title-sug"></div></div></div>
     <div class="fgrp"><label class="flbl">ジャンル</label><select class="fctl" id="mt-cat"></select></div>
     <div class="fgrp"><label class="flbl">支払い方法</label><select class="fctl" id="mt-pm"></select></div>
     <div class="fgrp"><label class="flbl">金額</label><input type="text" class="fctl" id="mt-amt" placeholder="0" inputmode="numeric"></div>
@@ -326,7 +329,7 @@ input[type=file]{display:none;}
   <div class="modal">
     <div class="modal-hdr"><div class="modal-ttl">レシート分割入力</div><div class="modal-x" onclick="closeModal('modal-split')">✕</div></div>
     <div class="fgrp"><label class="flbl">日付</label><input type="date" class="fctl" id="sp-date"></div>
-    <div class="fgrp"><label class="flbl">店名・タイトル</label><input type="text" class="fctl" id="sp-title" placeholder="例：セブンイレブン"></div>
+    <div class="fgrp"><label class="flbl">店名・タイトル</label><div class="tag-input-wrap"><input type="text" class="fctl" id="sp-title" placeholder="例：セブンイレブン" autocomplete="off"><div class="tag-sug" id="sp-title-sug"></div></div></div>
     <div class="fgrp"><label class="flbl">支払い方法</label><select class="fctl" id="sp-pm"></select></div>
     <div class="fgrp"><label class="flbl">タグ（カンマ区切り・任意）</label><div class="tag-input-wrap"><input type="text" class="fctl" id="sp-tags" placeholder="例：コンビニ" autocomplete="off"><div class="tag-sug" id="sp-tags-sug"></div></div></div>
     <div class="sec-label" style="margin-top:8px">明細（ジャンル・金額）</div>
@@ -429,7 +432,7 @@ function defaultS(){
   return{version:VER,transactions:[],fixedCosts:[],
     categories:[{id:'c1',name:'食費'},{id:'c2',name:'交通費'},{id:'c3',name:'光熱費'},{id:'c4',name:'住居費'},{id:'c5',name:'娯楽'},{id:'c6',name:'医療'},{id:'c7',name:'給与'}],
     paymentMethods:[{id:'p1',name:'現金'},{id:'p2',name:'クレジットカード'}],
-    cards:[],templates:[],settings:{monthlyBudget:{}},
+    cards:[],templates:[],settings:{monthlyBudget:{},lastBackupAt:null},
     ui:{selectedDate:t,currentMonth:t.slice(0,7),activeTab:'calendar'}};
 }
 function loadS(){try{const r=localStorage.getItem(SKEY);if(r){const p=JSON.parse(r);if(p.version===VER){S=p;return;}}}catch(e){}S=defaultS();}
@@ -521,6 +524,30 @@ function attachTagSuggest(inputId,boxId){
         inp.value=[...before,t].join(', ')+', ';
         box.style.display='none';inp.focus();
       };
+      box.appendChild(d);
+    });
+    box.style.display='block';
+  }
+  inp.addEventListener('input',show);
+  inp.addEventListener('focus',show);
+  inp.addEventListener('blur',()=>setTimeout(()=>{box.style.display='none';},150));
+}
+function getAllTitles(){
+  const freq={};
+  S.transactions.forEach(t=>{const k=(t.title||'').trim();if(!k)return;freq[k]=(freq[k]||0)+1;});
+  return Object.entries(freq).sort((a,b)=>b[1]-a[1]).map(([k])=>k);
+}
+function attachTitleSuggest(inputId,boxId){
+  const inp=document.getElementById(inputId),box=document.getElementById(boxId);
+  if(!inp||!box)return;
+  function show(){
+    const val=inp.value.trim().toLowerCase(),all=getAllTitles();
+    const matches=val?all.filter(t=>t.toLowerCase().includes(val)&&t.toLowerCase()!==val):all.slice(0,6);
+    if(!matches.length){box.style.display='none';return;}
+    box.innerHTML='';
+    matches.slice(0,6).forEach(t=>{
+      const d=document.createElement('div');d.className='tagsug-item';d.textContent=t;
+      d.onmousedown=(e)=>{e.preventDefault();inp.value=t;box.style.display='none';inp.focus();};
       box.appendChild(d);
     });
     box.style.display='block';
@@ -974,7 +1001,20 @@ function anaSearch(el){
 function renderSet(){
   const ym=S.ui.currentMonth,bdg=(S.settings.monthlyBudget||{})[ym];
   document.getElementById('bdg-disp').textContent=bdg?`¥${fmt(bdg)}`:'未設定';
-  renderFcList();renderPmList();renderCardList();renderCatList();renderTmplSetList();
+  renderFcList();renderPmList();renderCardList();renderCatList();renderTmplSetList();renderBackupStatus();
+}
+function daysSince(iso){
+  if(!iso)return Infinity;
+  return Math.floor((new Date()-new Date(iso))/86400000);
+}
+function renderBackupStatus(){
+  const el=document.getElementById('backup-status');if(!el)return;
+  const last=S.settings.lastBackupAt,d=daysSince(last);
+  let dateStr='まだバックアップされていません';
+  if(last){const dt=new Date(last);dateStr=`最終エクスポート: ${dt.getFullYear()}/${z(dt.getMonth()+1)}/${z(dt.getDate())}`;}
+  let html=`<div class="sec-label" style="margin-bottom:8px">${dateStr}</div>`;
+  if(d>=30)html+=`<div class="backup-warn">${last?`最後のバックアップから${d}日経っています。`:'まだ一度もバックアップされていません。'}端末のデータが消えると復元できないので、エクスポートをおすすめします。</div>`;
+  el.innerHTML=html;
 }
 function makeSetItem(name,sub,buttons){
   const item=document.createElement('div');item.className='set-item';
@@ -994,7 +1034,18 @@ function makeSortableItem(id,name,sub,buttons){
   item.appendChild(info);item.appendChild(acts);return item;
 }
 function emptyRow(el,msg){const em=document.createElement('div');em.className='empty';em.style.padding='10px 0';em.textContent=msg;el.appendChild(em);}
-function archivedHeader(el,count){const h=document.createElement('div');h.className='sec-label';h.style.cssText='margin:14px 0 6px';h.textContent=`アーカイブ済み（${count}）`;el.appendChild(h);}
+function archivedHeader(el,count,isOpen,onToggle){
+  const h=document.createElement('div');h.className='archive-toggle';
+  h.innerHTML=`<span>アーカイブ済み（${count}）</span><span>${isOpen?'▲':'▼'}</span>`;
+  h.onclick=onToggle;
+  el.appendChild(h);
+}
+function categoryUsageCount(id){
+  return S.transactions.filter(t=>t.categoryId===id).length+S.fixedCosts.filter(f=>f.categoryId===id).length;
+}
+function paymentMethodUsageCount(id){
+  return S.transactions.filter(t=>t.paymentMethodId===id).length+S.fixedCosts.filter(f=>f.paymentMethodId===id).length+S.cards.filter(c=>c.paymentMethodId===id).length;
+}
 
 function renderFcList(){
   const el=document.getElementById('fc-list');el.innerHTML='';
@@ -1018,8 +1069,8 @@ function renderFcList(){
     });
   }else emptyRow(el,'使用中の固定費はありません');
   if(ended.length){
-    archivedHeader(el,ended.length);
-    ended.forEach(fc=>{
+    archivedHeader(el,ended.length,fcArchivedOpen,()=>{fcArchivedOpen=!fcArchivedOpen;renderFcList();});
+    if(fcArchivedOpen)ended.forEach(fc=>{
       const rl=fc.rule.type==='monthly'?`毎月${fc.rule.day}日`:fc.rule.type==='weekly'?`毎週`:`毎年${fc.rule.month}月${fc.rule.day}日`;
       el.appendChild(makeSetItem(fc.title,`¥${fmt(fc.amount)} / ${rl}`,[
         ['編集','',()=>openFcModal(fc)],
@@ -1028,6 +1079,7 @@ function renderFcList(){
     });
   }
 }
+let fcArchivedOpen=false,pmArchivedOpen=false,cardArchivedOpen=false,catArchivedOpen=false;
 function renderPmList(){
   const el=document.getElementById('pm-list');el.innerHTML='';
   const active=S.paymentMethods.filter(p=>!p.archived),archived=S.paymentMethods.filter(p=>p.archived);
@@ -1047,11 +1099,12 @@ function renderPmList(){
     });
   }else emptyRow(el,'使用中の支払い方法はありません');
   if(archived.length){
-    archivedHeader(el,archived.length);
-    archived.forEach(pm=>{
-      el.appendChild(makeSetItem(pm.name,null,[
-        ['復元','',()=>{S.paymentMethods=S.paymentMethods.map(p=>p.id===pm.id?{...p,archived:false}:p);saveS();toast('復元しました');renderSet();}]
-      ]));
+    archivedHeader(el,archived.length,pmArchivedOpen,()=>{pmArchivedOpen=!pmArchivedOpen;renderPmList();});
+    if(pmArchivedOpen)archived.forEach(pm=>{
+      const usage=paymentMethodUsageCount(pm.id);
+      const buttons=[['復元','',()=>{S.paymentMethods=S.paymentMethods.map(p=>p.id===pm.id?{...p,archived:false}:p);saveS();toast('復元しました');renderSet();}]];
+      if(usage===0)buttons.push(['完全削除',' del',()=>askConfirm(`「${pm.name}」を完全に削除しますか？この操作は取り消せません。`,()=>{S.paymentMethods=S.paymentMethods.filter(p=>p.id!==pm.id);saveS();toast('削除しました');renderSet();})]);
+      el.appendChild(makeSetItem(pm.name,usage>0?`使用中の取引/固定費/カード設定: ${usage}件`:null,buttons));
     });
   }
 }
@@ -1067,11 +1120,12 @@ function renderCardList(){
   });
   if(!active.length)emptyRow(el,'使用中のカード設定はありません');
   if(archived.length){
-    archivedHeader(el,archived.length);
-    archived.forEach(card=>{
+    archivedHeader(el,archived.length,cardArchivedOpen,()=>{cardArchivedOpen=!cardArchivedOpen;renderCardList();});
+    if(cardArchivedOpen)archived.forEach(card=>{
       const pm=S.paymentMethods.find(p=>p.id===card.paymentMethodId);
       el.appendChild(makeSetItem(pm?pm.name:'不明',`締め日:${card.closingDay}日 / 支払日:${card.paymentDay}日`,[
-        ['復元','',()=>{S.cards=S.cards.map(c=>c.paymentMethodId===card.paymentMethodId?{...c,archived:false}:c);saveS();toast('復元しました');renderSet();renderCal();}]
+        ['復元','',()=>{S.cards=S.cards.map(c=>c.paymentMethodId===card.paymentMethodId?{...c,archived:false}:c);saveS();toast('復元しました');renderSet();renderCal();}],
+        ['完全削除',' del',()=>askConfirm('このカード設定を完全に削除しますか？この操作は取り消せません。',()=>{S.cards=S.cards.filter(c=>c.paymentMethodId!==card.paymentMethodId);saveS();toast('削除しました');renderSet();})]
       ]));
     });
   }
@@ -1095,11 +1149,12 @@ function renderCatList(){
     });
   }else emptyRow(el,'使用中のジャンルはありません');
   if(archived.length){
-    archivedHeader(el,archived.length);
-    archived.forEach(cat=>{
-      el.appendChild(makeSetItem(cat.name,null,[
-        ['復元','',()=>{S.categories=S.categories.map(c=>c.id===cat.id?{...c,archived:false}:c);saveS();toast('復元しました');renderSet();}]
-      ]));
+    archivedHeader(el,archived.length,catArchivedOpen,()=>{catArchivedOpen=!catArchivedOpen;renderCatList();});
+    if(catArchivedOpen)archived.forEach(cat=>{
+      const usage=categoryUsageCount(cat.id);
+      const buttons=[['復元','',()=>{S.categories=S.categories.map(c=>c.id===cat.id?{...c,archived:false}:c);saveS();toast('復元しました');renderSet();}]];
+      if(usage===0)buttons.push(['完全削除',' del',()=>askConfirm(`「${cat.name}」を完全に削除しますか？この操作は取り消せません。`,()=>{S.categories=S.categories.filter(c=>c.id!==cat.id);saveS();toast('削除しました');renderSet();})]);
+      el.appendChild(makeSetItem(cat.name,usage>0?`使用中の取引/固定費: ${usage}件`:null,buttons));
     });
   }
 }
@@ -1215,6 +1270,8 @@ async function shareOrDownload(blob,filename,mime){
 async function exportBkup(){
   const blob=new Blob([JSON.stringify({version:VER,data:S},null,2)],{type:'application/json'});
   await shareOrDownload(blob,`kakeibo_${td()}.json`,'application/json');
+  S.settings.lastBackupAt=new Date().toISOString();
+  saveS();renderBackupStatus();
   toast('エクスポートしました');
 }
 function csvEscape(v){
@@ -1324,6 +1381,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   attachTagSuggest('it-tags','it-tags-sug');
   attachTagSuggest('mt-tags','mt-tags-sug');
   attachTagSuggest('sp-tags','sp-tags-sug');
+  attachTitleSuggest('it-title','it-title-sug');
+  attachTitleSuggest('mt-title','mt-title-sug');
+  attachTitleSuggest('sp-title','sp-title-sug');
   switchTab(S.ui.activeTab||'calendar');
 });
 </script>
