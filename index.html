@@ -304,6 +304,15 @@ input[type=file]{display:none;}
         <input type="file" id="imp-file" accept=".json" onchange="importBkup(this)">
         <input type="file" id="imp-legacy" accept=".json" onchange="importLegacy(this)">
       </div>
+      <div class="set-sec">
+        <div class="set-sec-ttl">メール自動取込（Olive）</div>
+        <div class="set-item"><div class="set-info"><div class="set-name">自動取込</div><div class="set-sub" id="sync-status">未設定</div></div><button class="btn-sm" onclick="syncNow(true)">今すぐ取込</button></div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <input type="password" id="sync-pass" placeholder="パスフレーズ" autocomplete="off" style="flex:1;padding:9px;border:1px solid var(--border2,#ccccc4);border-radius:8px;font-size:13px;background:var(--surface,#fff);color:var(--text,#1a1a16)">
+          <button class="btn-sm" onclick="saveSyncPass()">保存</button>
+        </div>
+        <div class="set-sub" style="margin-top:6px">三井住友カードの利用通知メールを自動で取り込みます。パスフレーズはシロから案内されたものを入力してください（初回のみ）。</div>
+      </div>
     </div>
   </div>
 </div>
@@ -1499,6 +1508,69 @@ function importLegacy(input){
   reader.readAsText(file);input.value='';
 }
 
+// ===== メール自動取込 =====
+const SYNC_LS='kb_sync_v1';
+function syncCfg(){try{return JSON.parse(localStorage.getItem(SYNC_LS))||{}}catch(e){return{}}}
+function saveSyncPass(){
+  const v=document.getElementById('sync-pass').value.trim();
+  if(!v){toast('パスフレーズを入力してください');return;}
+  localStorage.setItem(SYNC_LS,JSON.stringify({pass:v}));
+  document.getElementById('sync-pass').value='';
+  toast('パスフレーズを保存しました');
+  updSyncStatus();
+  syncNow(true);
+}
+function updSyncStatus(){
+  const el=document.getElementById('sync-status');if(!el)return;
+  const c=syncCfg();
+  el.textContent=c.pass?(c.lastSync?('有効（最終取込: '+c.lastSync+'）'):'有効'):'未設定（パスフレーズを保存してください）';
+}
+function b64ToBytes(s){const bin=atob(s);const b=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);return b;}
+async function syncDecrypt(pass,pkg){
+  const enc=new TextEncoder();
+  const km=await crypto.subtle.importKey('raw',enc.encode(pass),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64ToBytes(pkg.salt),iterations:150000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64ToBytes(pkg.iv)},key,b64ToBytes(pkg.data));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+function mergeEntries(entries){
+  const catMap={},pmMap={};
+  entries.forEach(e=>{const g=e.genre||'';const m=e.method||'';if(g&&!catMap[g])catMap[g]=uid();if(m&&!pmMap[m])pmMap[m]=uid();});
+  const newCats=[...S.categories];const newPms=[...S.paymentMethods];
+  Object.entries(catMap).forEach(([name,id])=>{const f=newCats.find(c=>c.name===name);if(f)catMap[name]=f.id;else newCats.push({id,name});});
+  Object.entries(pmMap).forEach(([name,id])=>{const f=newPms.find(p=>p.name===name);if(f)pmMap[name]=f.id;else newPms.push({id,name});});
+  const existingIds=new Set(S.transactions.map(t=>t.id));
+  let added=0;
+  entries.forEach(e=>{
+    if(!e.date||!e.amount)return;
+    const amt=Number(e.amount);const absAmt=Math.abs(amt);if(absAmt===0)return;
+    const id=String(e.id||uid());
+    if(existingIds.has(id))return;
+    S.transactions.push({id,date:e.date,type:amt<0?'expense':'income',amount:absAmt,categoryId:catMap[e.genre||'']||'',paymentMethodId:pmMap[e.method||'']||'',title:e.title||'',memo:e.memo||'',isOverride:false,fixedCostId:null});
+    existingIds.add(id);added++;
+  });
+  S.categories=newCats;S.paymentMethods=newPms;
+  return added;
+}
+async function syncNow(manual){
+  const c=syncCfg();
+  if(!c.pass){if(manual)toast('先にパスフレーズを保存してください');updSyncStatus();return;}
+  try{
+    const res=await fetch('imports.enc.json',{cache:'no-store'});
+    if(!res.ok){if(manual)toast('取込データがまだありません');updSyncStatus();return;}
+    const pkg=await res.json();
+    const entries=await syncDecrypt(c.pass,pkg);
+    const added=mergeEntries(entries);
+    if(added>0){saveS();renderAll();toast('メールから '+added+' 件取り込みました');}
+    else if(manual)toast('新しい利用はありませんでした');
+    c.lastSync=new Date().toLocaleString('ja-JP');
+    localStorage.setItem(SYNC_LS,JSON.stringify(c));
+  }catch(err){
+    if(manual)toast('自動取込に失敗しました（パスフレーズ違いの可能性）');
+  }
+  updSyncStatus();
+}
+
 // TABS
 function switchTab(name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
@@ -1524,6 +1596,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   attachTitleSuggest('mt-title','mt-title-sug');
   attachTitleSuggest('sp-title','sp-title-sug');
   switchTab(S.ui.activeTab||'calendar');
+  updSyncStatus();
+  syncNow(false);
 });
 </script>
 
